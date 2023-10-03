@@ -19,7 +19,7 @@ random.shuffle(urls)
 loaded_urls_queue = queue.Queue()
 counter = 0
 
-# 检查 URL 是否已加载
+# 检查 URL 是否已扫描过，因为url数量很多时，一次可能扫不完
 loaded_urls_set = set()
 
 # 读取已扫描过的 URL 到集合中
