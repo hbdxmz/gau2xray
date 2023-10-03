@@ -8,11 +8,11 @@ from playwright.sync_api import sync_playwright
 
 proxy_server = "http://127.0.0.1:7777"  # 替换为实际的xray IP 和端口
 
-# 读取包含 URL 的文本文件
+# 读取gau处理结果中的url
 with open(r'gau_urls.txt', 'r', encoding='utf-8') as file:
     urls = file.readlines()
 
-# 随机化 URL 列表
+# 随机化 URL 列表，因为有时候gau_urls中有连续多个相同域名的url，随机化后能在不同url间检测
 random.shuffle(urls)
 
 # 创建线程安全的队列和计数器
@@ -22,7 +22,7 @@ counter = 0
 # 检查 URL 是否已加载
 loaded_urls_set = set()
 
-# 读取已加载的 URL 到集合中
+# 读取已扫描过的 URL 到集合中
 with open('loaded_urls.txt', 'r', encoding='utf-8') as f:
     for line in f:
         loaded_urls_set.add(line.strip())
@@ -57,7 +57,7 @@ def process_url(url):
                 f.write(url + '\n')
 
             # 添加更长的加载时间
-            time.sleep(0.8)  # 延迟2秒钟再加载下一个URL
+            time.sleep(0.8)  # 延迟一会再加载下一个URL
 
             return url  # 返回已加载的 URL
 
@@ -91,7 +91,7 @@ def timeout_handler():
     os._exit(0)
 
 
-# 创建线程池，使用多线程并行处理 URL
+# 创建线程池，使用多线程并行处理 URL，max_workers为chromium浏览器实例数量
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
     # 提交任务
     futures = [executor.submit(process_url, url.strip()) for url in urls]
@@ -100,7 +100,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
     display_thread = threading.Thread(target=display_loaded_count)
     display_thread.start()
 
-    # 创建定时器线程，在指定时间后引发 KeyboardInterrupt 异常退出程序，主要用于扫描大量目标URL费时较久
+    # 创建定时器线程，在指定时间后引发 KeyboardInterrupt 异常退出程序，主要用于扫描大量目标URL费时较久，用于控制扫描时间
     timer_thread = threading.Thread(target=timeout_handler)
     timer_thread.start()
 
